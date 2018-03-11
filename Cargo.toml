@@ -1,0 +1,8 @@
+[package]
+name = "drmtest"
+version = "0.1.0"
+authors = ["Felix Bernhardt <felix.bernhardt@mailbox.org>"]
+
+[dependencies]
+libc = "0.2"
+
