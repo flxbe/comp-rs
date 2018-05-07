@@ -7,3 +7,7 @@ authors = ["Felix Bernhardt <felix.bernhardt@mailbox.org>"]
 libc = "0.2"
 memmap = "0.6.2"
 
+[dependencies.sdl2]
+version = "0.31"
+features = ["bundled"]
+

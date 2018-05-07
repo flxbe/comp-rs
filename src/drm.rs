@@ -1,7 +1,6 @@
 extern crate libc;
 extern crate memmap;
 
-use std::{thread, time};
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::AsRawFd;
 
@@ -9,7 +8,7 @@ use self::libc::ioctl;
 use super::drm_const::*;
 use super::ffi::*;
 
-use self::memmap::{MmapOptions};
+use self::memmap::{MmapMut, MmapOptions};
 
 pub trait Pointer {
     fn as_ptr(&mut self) -> *mut Self {
@@ -31,11 +30,18 @@ fn create_buffer<T>(size: u32) -> Vec<T> {
     buffer
 }
 
-pub fn open(path: &str) {
+pub struct DeviceInterface {
+    pub fd: ::std::fs::File,
+    pub fbs: Vec<FrameBuffer>
+}
+
+pub fn open(path: &str) -> DeviceInterface {
     let fd = OpenOptions::new()
         .read(true)
         .write(true)
         .open(path).unwrap();
+
+    unsafe { ioctl(fd.as_raw_fd(), DRM_IOCTL_SET_MASTER, 0) };
 
     let mut res = drm_mode_card_res::default();
     unsafe { ioctl(fd.as_raw_fd(), DRM_IOCTL_MODE_GETRESOURCES, res.as_ptr()) };
@@ -120,11 +126,6 @@ pub fn open(path: &str) {
                 .map_mut(&fd)
                 .unwrap()
         };
-
-        mmap[0] = 0xff;
-        mmap[1] = 0xff;
-        mmap[2] = 0xff;
-        mmap[3] = 0xff;
             
         /**
          * initialize the crtc
@@ -144,12 +145,60 @@ pub fn open(path: &str) {
         crtc.mode_valid = 1;
         unsafe { ioctl(fd.as_raw_fd(), DRM_IOCTL_MODE_SETCRTC, crtc.as_ptr()) };
 
-        thread::sleep(time::Duration::from_millis(1000));
+        fbs.push(FrameBuffer {
+            frame: mmap,
+            height: fb_cmd.height,
+            width: fb_cmd.width,
+            fb_cmd: fb_cmd
+        });
+
+    }
+
+    //unsafe { ioctl(fd.as_raw_fd(), DRM_IOCTL_SET_MASTER, 0) };
+
+    DeviceInterface {
+        fd,
+        fbs
     }
 }
 
 #[derive(Debug)]
-struct FrameBuffer {
-    fb_cmd: drm_mode_fb_cmd
+pub struct FrameBuffer {
+    fb_cmd: drm_mode_fb_cmd,
+    frame: MmapMut,
+    height: u32,
+    width: u32
 }
 
+impl FrameBuffer {
+    pub fn set(&mut self, x: u32, y: u32, c: &Color) {
+        let i = (x + y * self.width) * 4;
+        self.frame[i as usize] = c.r;
+        self.frame[(i + 1) as usize] = c.g;
+        self.frame[(i + 2) as usize] = c.b;
+        self.frame[(i + 3) as usize] = c.a;
+    }
+
+    pub fn height(&mut self) -> u32 {
+        self.height
+    }
+
+    pub fn width(&mut self) -> u32 {
+        self.width
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Default)]
+pub struct Color {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8
+}
+
+impl Color {
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Color {
+        Color {r, g, b, a}
+    }
+}
