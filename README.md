@@ -2,30 +2,35 @@
 
 A compositing window manager for linux written in rust. This is a personal, educational project.
 
-## Requirements
+### Requirements
 
 * Add current user to groups `video` and `input`.
 
-## Roadmap
+### Roadmap
 
-#### Display access
+###### Display access
 
-Access to the display by creating a `DRM` framebuffer and registering it.
+- [x] Access the display by creating a `DRM` framebuffer and registering it.
+- [ ] Hold on to display access.
 
-#### Mouse input
+###### Mouse input
 
-Read the mouse input events by reading the appropriate device file.
+- [x] Read and parse the mouse input events by reading the appropriate device file.
+- [ ] Update the internal state of the mouse.
 
-#### Multithreading
+###### Multithreading
 
-Use some runtime such as `tokio` to concurrently handle all events.
+- [ ] Use some runtime such as `tokio` to concurrently handle all events.
 
-#### Keyboard input
+###### Keyboard input
 
-The same as for the mouse input.
+- [ ] Read and parse the keyboard input events by reading the appropriate device file.
+- [ ] Update the internal state of the keyboard.
 
-#### Window server
+###### Window server
 
-Create a socket for other applications to connect to. It should be possible to register new windows, to change the window size and to update the viewport. All input signals should be proxied to the relevant windows.
-
-
+- [ ] Create a socket for other applications to connect to.
+- [ ] Window registration.
+- [ ] Resizing.
+- [ ] Viewport updates.
+- [ ] Forward input events to the applications.
